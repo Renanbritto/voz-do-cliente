@@ -145,7 +145,7 @@ with tab_chat:
     user_input = st.text_area("Texto da Mensagem / Avaliação:", value=st.session_state.current_text, height=110)
     product_name_input = st.text_input("Nome do Produto:", value=st.session_state.current_prod)
 
-    if st.button("🚀 Enviar para o Gemini", type="primary", use_container_width=True):
+    if st.button("🚀 Enviar para Análise", type="primary", use_container_width=True):
         with st.spinner("Classificando com Structured Outputs (Gemini 1.5 Flash)..."):
             result, metrics = client.analyze_review(user_input, product_name=product_name_input)
 
