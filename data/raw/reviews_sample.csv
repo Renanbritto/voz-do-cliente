@@ -1,0 +1,11 @@
+id,author,product,sku,rating,price,review_date,text
+rev-01,Carlos E. Mendes,Fone de Ouvido Noise Cancelling Pro,AUDIO-PRO-ANC,1,899.00,2026-09-01,"A bateria não dura nem 2 horas com o cancelamento de ruído ligado, bem longe das 30 horas anunciadas na caixa. Pedi a devolução imediata."
+rev-02,Mariana S. Albuquerque,Fone de Ouvido Noise Cancelling Pro,AUDIO-PRO-ANC,4,899.00,2026-09-01,"O cancelamento de ruído é espetacular no escritório. Só achei um pouco pesado na cabeça após 4 horas de uso contínuo."
+rev-03,Rodrigo N. Prado,Smartwatch Tracker Ultra,WEAR-ULTRA-01,1,1249.00,2026-08-30,"O GPS simplesmente perde o sinal toda vez que entro na esteira da academia ou passo debaixo de árvores. Decepcionado pelo valor pago."
+rev-04,Fernanda K. Lima,Smartwatch Tracker Ultra,WEAR-ULTRA-01,5,1249.00,2026-08-29,"Medição de batimentos super precisa e a tela AMOLED brilha muito no sol. O melhor smartwatch que já comprei!"
+rev-05,Lucas B. Faria,Teclado Mecânico Wireless Stealth,KEY-MECH-WL,1,549.00,2026-08-28,"Comprei para trabalhar sem fios, mas o bluetooth vive desconectando a cada 10 minutos. Tive que usar o cabo o tempo todo."
+rev-06,Juliana M. Toledo,Mouse Ergonômico Vertical Pro,MOU-ERGO-02,5,349.00,2026-08-27,"Minha dor no punho e tendinite sumiram depois de duas semanas de uso. Produto essencial para quem programa o dia todo."
+rev-07,Guilherme H. Souza,Fone de Ouvido Noise Cancelling Pro,AUDIO-PRO-ANC,1,899.00,2026-08-26,"Produto com defeito de fábrica: o lado esquerdo chia sem parar quando ativo o modo transparência. SAC demorou 5 dias para responder."
+rev-08,Beatriz C. Vasconcelos,Webcam 4K Ultra Streamer,CAM-4K-PRO,2,699.00,2026-08-25,"A imagem até que é boa, mas o autofoco fica pulsando na minha cara o tempo todo durante chamadas no Teams. Muito irritante."
+rev-09,Thiago P. Ribeiro,Monitor Ultrawide 34 IPS,MON-34-UW,1,2499.00,2026-08-24,"Chegou com 3 dead pixels no centro da tela e vazamento absurdo de luz (IPS glow) nos cantos. Processo de troca na garantia é lento demais."
+rev-10,Camila R. Duarte,Caixa de Som Portátil BassMax,SPK-BASS-MAX,5,429.00,2026-08-23,"Graves inacreditáveis pelo tamanho da caixa! Levamos para a praia e resistiu à água perfeitamente. Bateria durou o dia inteiro."
