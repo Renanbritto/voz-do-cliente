@@ -37,9 +37,13 @@ st.markdown("""
         text-transform: uppercase;
         letter-spacing: 1px;
     }
-    .badge-neg { color: #f87171; font-weight: bold; }
-    .badge-pos { color: #4ade80; font-weight: bold; }
-    .badge-neu { color: #facc15; font-weight: bold; }
+    .chat-box {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 24px;
+        margin-top: 15px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -97,15 +101,75 @@ st.markdown(
 )
 st.markdown("---")
 
-# Abas de Navegação
-tab_overview, tab_table, tab_live = st.tabs([
+# Abas de Navegação (Chat como primeira aba)
+tab_chat, tab_overview, tab_table = st.tabs([
+    "💬 Chat",
     "📊 Visão Geral & Pareto",
-    "📋 Tabela de Reviews Enriquecidas",
-    "⚡ Teste ao Vivo (Playground IA)"
+    "📋 Tabela de Reviews Enriquecidas"
 ])
 
 # =============================================================================
-# ABA 1: VISÃO GERAL & PARETO
+# ABA 1: CHAT / PLAYGROUND IA AO VIVO
+# =============================================================================
+with tab_chat:
+    st.subheader("💬 Chat & Análise de Review em Tempo Real")
+    st.markdown("Digite ou cole qualquer avaliação de cliente para ver o **Gemini 1.5 Flash** classificar com Structured Outputs em tempo real.")
+
+    # Botões rápidos com exemplos prontos
+    st.markdown("##### ⚡ Exemplos Rápidos para Testar:")
+    ex_col1, ex_col2, ex_col3 = st.columns(3)
+    
+    sample_text = "Comprei o fone há 3 dias e o cancelamento de ruído estala no ouvido esquerdo. Péssima experiência, solicitei devolução e reembolso imediato."
+    sample_prod = "Fone de Ouvido ANC"
+
+    if "current_text" not in st.session_state:
+        st.session_state.current_text = sample_text
+    if "current_prod" not in st.session_state:
+        st.session_state.current_prod = sample_prod
+
+    with ex_col1:
+        if st.button("🔋 Bateria Fraca (Detrator)"):
+            st.session_state.current_text = "A bateria não dura 2 horas com cancelamento ativo, longe das 30 horas da caixa. Quero devolver."
+            st.session_state.current_prod = "Fone de Ouvido Noise Cancelling Pro"
+
+    with ex_col2:
+        if st.button("📶 Bluetooth Desconectando"):
+            st.session_state.current_text = "O bluetooth fica caindo a cada 10 minutos quando uso no trabalho. Impossível participar de reuniões."
+            st.session_state.current_prod = "Teclado Mecânico Wireless"
+
+    with ex_col3:
+        if st.button("⭐ Produto Excelente (Promotor)"):
+            st.session_state.current_text = "Melhor compra que fiz no ano! Conforto absurdo, som cristalino e bateria durou 4 dias de uso intenso."
+            st.session_state.current_prod = "Smartwatch Tracker Ultra"
+
+    user_input = st.text_area("Texto da Mensagem / Avaliação:", value=st.session_state.current_text, height=110)
+    product_name_input = st.text_input("Nome do Produto:", value=st.session_state.current_prod)
+
+    if st.button("🚀 Enviar para o Gemini", type="primary", use_container_width=True):
+        with st.spinner("Classificando com Structured Outputs (Gemini 1.5 Flash)..."):
+            result, metrics = client.analyze_review(user_input, product_name=product_name_input)
+
+            st.success("Análise concluída com sucesso!")
+            res_col1, res_col2 = st.columns([2, 1])
+
+            with res_col1:
+                st.markdown(f"### Sentimento: **{result.sentiment.value}** (Score: `{result.sentiment_score:+.2f}`)")
+                st.markdown(f"**Dimensão / Aspecto:** `{result.aspect.value}`")
+                st.markdown(f"**Causa-Raiz Detectada:** `{result.primary_problem_tag}`")
+                st.markdown(f"**Subtag Contextual:** `{result.secondary_tag}`")
+                st.markdown(f"**Risco de Churn:** `{result.churn_risk.value}`")
+                st.info(f"💡 **Ação Prescritiva para o Time:** {result.suggested_action}")
+                st.caption(f"📝 Síntese Executiva: {result.summary_pt}")
+
+            with res_col2:
+                st.markdown("#### 💰 Métricas de FinOps")
+                st.metric("Tokens Consumidos", f"{metrics.total_tokens}")
+                st.metric("Custo da Chamada (R$)", f"R$ {metrics.cost_brl:.5f}")
+                st.metric("Custo em Dólar (USD)", f"${metrics.cost_usd:.5f}")
+                st.caption("Base: $0.075 / 1M tokens de input no Gemini 1.5 Flash.")
+
+# =============================================================================
+# ABA 2: VISÃO GERAL & PARETO
 # =============================================================================
 with tab_overview:
     # 4 Cartões de Métricas
@@ -218,7 +282,7 @@ with tab_overview:
         st.bar_chart(churn_counts)
 
 # =============================================================================
-# ABA 2: TABELA DE REVIEWS ENRIQUECIDAS
+# ABA 3: TABELA DE REVIEWS ENRIQUECIDAS
 # =============================================================================
 with tab_table:
     st.subheader("📋 Base de Dados Enriquecida com Structured Outputs")
@@ -257,37 +321,3 @@ with tab_table:
         file_name="reviews_enriquecidas_gemini.csv",
         mime="text/csv"
     )
-
-# =============================================================================
-# ABA 3: TESTE AO VIVO (PLAYGROUND IA)
-# =============================================================================
-with tab_live:
-    st.subheader("⚡ Playground de Análise de Review em Tempo Real")
-    st.markdown("Digite ou cole qualquer avaliação de cliente para ver o Gemini 1.5 Flash classificar na hora.")
-
-    sample_test = "Comprei o fone há 3 dias e o cancelamento de ruído estala no ouvido esquerdo. Péssima experiência, solicitei devolução e reembolso imediato."
-    user_input = st.text_area("Texto da Avaliação:", value=sample_test, height=110)
-    product_name_input = st.text_input("Nome do Produto:", value="Fone de Ouvido ANC")
-
-    if st.button("🚀 Analisar com Gemini IA", type="primary"):
-        with st.spinner("Classificando com Structured Outputs..."):
-            result, metrics = client.analyze_review(user_input, product_name=product_name_input)
-
-            st.success("Análise concluída!")
-            res_col1, res_col2 = st.columns([2, 1])
-
-            with res_col1:
-                st.markdown(f"### Sentimento: **{result.sentiment.value}** (Score: `{result.sentiment_score:+.2f}`)")
-                st.markdown(f"**Dimensão Afetada:** `{result.aspect.value}`")
-                st.markdown(f"**Causa-Raiz Detectada:** `{result.primary_problem_tag}`")
-                st.markdown(f"**Subtag:** `{result.secondary_tag}`")
-                st.markdown(f"**Risco de Churn:** `{result.churn_risk.value}`")
-                st.info(f"💡 **Ação Prescritiva de CX/Produto:** {result.suggested_action}")
-                st.caption(f"📝 Síntese: {result.summary_pt}")
-
-            with res_col2:
-                st.markdown("#### 💰 Métricas de FinOps (Tokens)")
-                st.metric("Tokens Consumidos", f"{metrics.total_tokens}")
-                st.metric("Custo da Chamada (R$)", f"R$ {metrics.cost_brl:.5f}")
-                st.metric("Custo da Chamada (USD)", f"${metrics.cost_usd:.5f}")
-                st.caption("Base: $0.075/M tokens de input no Gemini 1.5 Flash.")
