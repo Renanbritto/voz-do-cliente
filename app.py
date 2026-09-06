@@ -113,7 +113,7 @@ tab_chat, tab_overview, tab_table = st.tabs([
 # =============================================================================
 with tab_chat:
     st.subheader("💬 Chat & Análise de Review em Tempo Real")
-    st.markdown("Digite ou cole qualquer avaliação de cliente para ver o **Gemini 1.5 Flash** classificar com Structured Outputs em tempo real.")
+    st.markdown("Digite ou cole qualquer avaliação de cliente para ver a classificação")
 
     # Botões rápidos com exemplos prontos
     st.markdown("##### ⚡ Exemplos Rápidos para Testar:")
