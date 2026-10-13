@@ -18,6 +18,8 @@ import {
 } from "recharts";
 import {
   BarChart3,
+  Brain,
+  Lightbulb,
   Sparkles,
   Layers,
   Zap,
@@ -91,7 +93,7 @@ const PRESET_EXAMPLES = [
     product: "Smartwatch Tracker Ultra",
     loss: "R$ 0,00",
     text: "Melhor compra que fiz no ano! Conforto absurdo, som cristalino e bateria durou 4 dias de uso intenso. Recomendo para todos!",
-    icon: Sparkles,
+    icon: ThumbsUp,
     color: "#10b981",
   },
   {
@@ -338,7 +340,7 @@ export default function VoCDashboardPage() {
     {
       id: "playground" as ActiveTab,
       label: "Análise IA em Tempo Real",
-      icon: Sparkles,
+      icon: Brain,
       badge: "Live",
     },
     {
@@ -534,24 +536,27 @@ export default function VoCDashboardPage() {
 
         {/* Rodapé da Sidebar */}
         <div className="p-3 border-t border-white/10 bg-[#090d16]/50">
-          <div
+          <button
+            type="button"
+            onClick={() => setIsChatOpen(true)}
             className={cn(
-              "rounded-2xl p-2.5 bg-white/[0.02] border border-white/5 flex items-center",
+              "w-full rounded-2xl p-2.5 bg-white/[0.02] hover:bg-white/[0.06] border border-white/5 hover:border-white/15 flex items-center transition-all cursor-pointer text-left",
               isSidebarExpanded ? "gap-3" : "justify-center"
             )}
+            title="Abrir Copilot IA"
           >
             <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
             {isSidebarExpanded && (
               <div className="overflow-hidden">
                 <span className="text-[11px] font-medium text-slate-300 block truncate">
-                  Gemini 1.5 Flash
+                  Copilot IA
                 </span>
                 <span className="text-[10px] text-slate-500 block truncate font-mono">
-                  Structured Outputs
+                  Online
                 </span>
               </div>
             )}
-          </div>
+          </button>
         </div>
       </aside>
 
@@ -948,18 +953,9 @@ export default function VoCDashboardPage() {
             {/* Header da Página com contextualização executiva */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-white/5">
               <div>
-                <div className="flex items-center gap-2.5">
-                  <h2 className="text-xl font-bold text-white tracking-wide">
-                    Análise em Tempo Real • VoC Cockpit
-                  </h2>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping" />
-                    Gemini 1.5 Flash
-                  </span>
-                  <span className="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[10px] font-mono bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
-                    Structured Outputs (JSON)
-                  </span>
-                </div>
+                <h2 className="text-xl font-bold text-white tracking-wide">
+                  Análise em Tempo Real • VoC Cockpit
+                </h2>
                 <p className="text-xs text-slate-400 mt-1">
                   Insira qualquer avaliação de consumidor ou selecione um caso de uso para extrair sentimento contínuo, causa-raiz técnica, risco de churn e ação prescritiva imediata.
                 </p>
@@ -1001,9 +997,8 @@ export default function VoCDashboardPage() {
                 {/* 1. Presets Rápidos Clicáveis (1-Clique) */}
                 <div className="p-5 rounded-3xl bg-[#0b0f1a]/95 backdrop-blur-2xl border border-white/10 shadow-xl space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs uppercase font-bold text-slate-400 font-mono tracking-wider flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                      1. Casos de Uso Prontos:
+                    <span className="text-xs uppercase font-bold text-slate-400 font-mono tracking-wider">
+                      Casos de Uso Prontos:
                     </span>
                     <span className="text-[10px] text-slate-500 font-mono">1-Clique para analisar</span>
                   </div>
@@ -1043,10 +1038,10 @@ export default function VoCDashboardPage() {
                   </div>
                 </div>
 
-                {/* 2. Formulário Customizável */}
+                {/* Formulário Customizável */}
                 <div className="p-5 rounded-3xl bg-[#0b0f1a]/95 backdrop-blur-2xl border border-white/10 shadow-xl space-y-4">
                   <span className="text-xs uppercase font-bold text-slate-400 font-mono tracking-wider block">
-                    2. Ou Customize a Mensagem:
+                    Personalizar Mensagem:
                   </span>
 
                   {/* Chips de Produtos Populares */}
@@ -1120,7 +1115,7 @@ export default function VoCDashboardPage() {
                       </>
                     ) : (
                       <>
-                        <Sparkles className="w-4 h-4 text-amber-200" />
+                        <Send className="w-4 h-4 text-white" />
                         Classificar com Structured Outputs
                       </>
                     )}
@@ -1169,7 +1164,7 @@ export default function VoCDashboardPage() {
                       <div className="absolute inset-0 bg-[#0b0f1a]/85 backdrop-blur-md z-20 flex flex-col items-center justify-center gap-3 rounded-3xl animate-in fade-in duration-200">
                         <div className="relative">
                           <div className="w-12 h-12 rounded-full border-2 border-rose-500/20 border-t-rose-500 animate-spin" />
-                          <Sparkles className="w-5 h-5 text-amber-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                          <Brain className="w-5 h-5 text-rose-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
                         </div>
                         <div className="text-center px-4">
                           <p className="text-xs font-semibold text-white tracking-wide">
@@ -1307,10 +1302,10 @@ export default function VoCDashboardPage() {
                         </div>
                       </div>
 
-                      {/* 3. Ação Prescritiva Recomendada para o Time (Destaque Central) */}
+                      {/* Ação Prescritiva Recomendada para o Time (Destaque Central) */}
                       <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-rose-500/5 to-transparent border border-amber-500/30 space-y-1.5">
                         <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300">
-                          <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                          <Lightbulb className="w-4 h-4 text-amber-400 shrink-0" />
                           <span>Ação Prescritiva para Engenharia / Operações:</span>
                         </div>
                         <p className="text-xs text-slate-200 leading-relaxed pl-5 font-medium">
@@ -1600,23 +1595,6 @@ export default function VoCDashboardPage() {
           </div>
         )}
       </main>
-
-      {/* =========================================================================
-          FLOATING ACTION BUTTON (FAB) NO CANTO INFERIOR DIREITO
-          Posicionamento: fixed bottom-5 right-5 z-40
-          Estilo: Pílula gradiente, efeito backdrop-blur, SEM atalhos no botão
-          ========================================================================= */}
-      <button
-        onClick={() => setIsChatOpen(true)}
-        className="fixed bottom-5 right-5 z-40 px-5 py-3 rounded-full bg-gradient-to-r from-rose-500 via-rose-600 to-amber-500 hover:from-rose-600 hover:to-amber-600 text-white font-semibold text-xs sm:text-sm shadow-2xl shadow-rose-500/30 backdrop-blur-xl border border-white/20 flex items-center gap-2.5 transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer"
-        aria-label="Abrir assistente Copilot IA"
-      >
-        <div className="w-5 h-5 rounded-full overflow-hidden shrink-0 border border-white/40">
-          <img src="/rn_logo_emblem.jpg" alt="" className="w-full h-full object-cover" />
-        </div>
-        <span className="tracking-wide">Copilot IA</span>
-        <Sparkles className="w-3.5 h-3.5 text-amber-200 animate-pulse" />
-      </button>
 
       {/* =========================================================================
           COPILOT CHAT DRAWER
