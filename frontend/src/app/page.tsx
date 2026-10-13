@@ -460,106 +460,102 @@ export default function VoCDashboardPage() {
       </aside>
 
       {/* =========================================================================
-          ÁREA PRINCIPAL DE CONTEÚDO (Foco 100% nos dados imediatamente)
+          ÁREA PRINCIPAL DE CONTEÚDO
           ========================================================================= */}
       <main className="flex-1 flex flex-col min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
-        {/* =======================================================================
-            GRID DE 4 KPIS DE ALTO IMPACTO NO TOPO (Imediatamente no 1º scroll)
-            Cores Semânticas Neon: Rose (#f43f5e), Amber (#f59e0b), Cyan (#06b6d4), Emerald (#10b981)
-            ======================================================================= */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* KPI 1: Total de Reviews (Cyan #06b6d4) */}
-          <div className="p-5 rounded-3xl bg-[#0b0f1a]/95 backdrop-blur-2xl border border-white/10 relative overflow-hidden shadow-xl hover:border-cyan-500/30 transition-all group">
-            <div className="pointer-events-none absolute -top-8 -right-8 w-24 h-24 bg-[#06b6d4]/10 rounded-full blur-2xl group-hover:bg-[#06b6d4]/20 transition-all" />
-            <div className="flex items-center justify-between">
-              <span className="text-xs uppercase tracking-wider text-slate-400 font-medium">
-                Total de Reviews
-              </span>
-              <div className="p-2 rounded-2xl bg-[#06b6d4]/10 text-[#06b6d4] border border-[#06b6d4]/20">
-                <MessageSquare className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mt-3">
-              <div className="text-3xl font-extrabold font-mono text-[#06b6d4] tracking-tight">
-                {totalReviews}
-              </div>
-              <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3 text-emerald-400 inline" />
-                100% com Structured Outputs
-              </p>
-            </div>
-          </div>
-
-          {/* KPI 2: Taxa de Detratores (Rose #f43f5e) */}
-          <div className="p-5 rounded-3xl bg-[#0b0f1a]/95 backdrop-blur-2xl border border-white/10 relative overflow-hidden shadow-xl hover:border-rose-500/30 transition-all group">
-            <div className="pointer-events-none absolute -top-8 -right-8 w-24 h-24 bg-[#f43f5e]/10 rounded-full blur-2xl group-hover:bg-[#f43f5e]/20 transition-all" />
-            <div className="flex items-center justify-between">
-              <span className="text-xs uppercase tracking-wider text-slate-400 font-medium">
-                Taxa de Detratores
-              </span>
-              <div className="p-2 rounded-2xl bg-[#f43f5e]/10 text-[#f43f5e] border border-[#f43f5e]/20">
-                <AlertTriangle className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mt-3">
-              <div className="text-3xl font-extrabold font-mono text-[#f43f5e] tracking-tight">
-                {detractorsPct.toFixed(1)}%
-              </div>
-              <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
-                <span className="font-mono text-rose-400 font-semibold">{highRiskCount}</span> clientes em alto risco de churn
-              </p>
-            </div>
-          </div>
-
-          {/* KPI 3: Prejuízo Mapeado em Devoluções (Amber #f59e0b) */}
-          <div className="p-5 rounded-3xl bg-[#0b0f1a]/95 backdrop-blur-2xl border border-white/10 relative overflow-hidden shadow-xl hover:border-amber-500/30 transition-all group">
-            <div className="pointer-events-none absolute -top-8 -right-8 w-24 h-24 bg-[#f59e0b]/10 rounded-full blur-2xl group-hover:bg-[#f59e0b]/20 transition-all" />
-            <div className="flex items-center justify-between">
-              <span className="text-xs uppercase tracking-wider text-slate-400 font-medium">
-                Prejuízo Devoluções
-              </span>
-              <div className="p-2 rounded-2xl bg-[#f59e0b]/10 text-[#f59e0b] border border-[#f59e0b]/20">
-                <DollarSign className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mt-3">
-              <div className="text-3xl font-extrabold font-mono text-[#f59e0b] tracking-tight">
-                R$ {totalLoss.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </div>
-              <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
-                <TrendingDown className="w-3 h-3 text-amber-400 inline" />
-                Concentrado em 2 causas no Pareto
-              </p>
-            </div>
-          </div>
-
-          {/* KPI 4: Custo Total de IA / FinOps (Emerald #10b981) */}
-          <div className="p-5 rounded-3xl bg-[#0b0f1a]/95 backdrop-blur-2xl border border-white/10 relative overflow-hidden shadow-xl hover:border-emerald-500/30 transition-all group">
-            <div className="pointer-events-none absolute -top-8 -right-8 w-24 h-24 bg-[#10b981]/10 rounded-full blur-2xl group-hover:bg-[#10b981]/20 transition-all" />
-            <div className="flex items-center justify-between">
-              <span className="text-xs uppercase tracking-wider text-slate-400 font-medium">
-                Custo de IA (FinOps)
-              </span>
-              <div className="p-2 rounded-2xl bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20">
-                <Zap className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mt-3">
-              <div className="text-3xl font-extrabold font-mono text-[#10b981] tracking-tight">
-                R$ {totalCostBrl.toFixed(4)}
-              </div>
-              <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
-                <span className="font-mono text-emerald-400">R$ 0,00018</span> por review analisada
-              </p>
-            </div>
-          </div>
-        </section>
-
         {/* =======================================================================
             MÓDULO 1: VISÃO GERAL & DIAGRAMA DE PARETO 80/20
             ======================================================================= */}
         {activeTab === "overview" && (
           <div className="space-y-6">
+            {/* Grid de 4 KPIs de Alto Impacto da Visão Geral */}
+            <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* KPI 1: Total de Reviews (Cyan #06b6d4) */}
+              <div className="p-5 rounded-3xl bg-[#0b0f1a]/95 backdrop-blur-2xl border border-white/10 relative overflow-hidden shadow-xl hover:border-cyan-500/30 transition-all group">
+                <div className="pointer-events-none absolute -top-8 -right-8 w-24 h-24 bg-[#06b6d4]/10 rounded-full blur-2xl group-hover:bg-[#06b6d4]/20 transition-all" />
+                <div className="flex items-center justify-between">
+                  <span className="text-xs uppercase tracking-wider text-slate-400 font-medium">
+                    Total de Reviews
+                  </span>
+                  <div className="p-2 rounded-2xl bg-[#06b6d4]/10 text-[#06b6d4] border border-[#06b6d4]/20">
+                    <MessageSquare className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <div className="text-3xl font-extrabold font-mono text-[#06b6d4] tracking-tight">
+                    {totalReviews}
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-400 inline" />
+                    100% com Structured Outputs
+                  </p>
+                </div>
+              </div>
+
+              {/* KPI 2: Taxa de Detratores (Rose #f43f5e) */}
+              <div className="p-5 rounded-3xl bg-[#0b0f1a]/95 backdrop-blur-2xl border border-white/10 relative overflow-hidden shadow-xl hover:border-rose-500/30 transition-all group">
+                <div className="pointer-events-none absolute -top-8 -right-8 w-24 h-24 bg-[#f43f5e]/10 rounded-full blur-2xl group-hover:bg-[#f43f5e]/20 transition-all" />
+                <div className="flex items-center justify-between">
+                  <span className="text-xs uppercase tracking-wider text-slate-400 font-medium">
+                    Taxa de Detratores
+                  </span>
+                  <div className="p-2 rounded-2xl bg-[#f43f5e]/10 text-[#f43f5e] border border-[#f43f5e]/20">
+                    <AlertTriangle className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <div className="text-3xl font-extrabold font-mono text-[#f43f5e] tracking-tight">
+                    {detractorsPct.toFixed(1)}%
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
+                    <span className="font-mono text-rose-400 font-semibold">{highRiskCount}</span> clientes em alto risco de churn
+                  </p>
+                </div>
+              </div>
+
+              {/* KPI 3: Prejuízo Mapeado em Devoluções (Amber #f59e0b) */}
+              <div className="p-5 rounded-3xl bg-[#0b0f1a]/95 backdrop-blur-2xl border border-white/10 relative overflow-hidden shadow-xl hover:border-amber-500/30 transition-all group">
+                <div className="pointer-events-none absolute -top-8 -right-8 w-24 h-24 bg-[#f59e0b]/10 rounded-full blur-2xl group-hover:bg-[#f59e0b]/20 transition-all" />
+                <div className="flex items-center justify-between">
+                  <span className="text-xs uppercase tracking-wider text-slate-400 font-medium">
+                    Prejuízo Devoluções
+                  </span>
+                  <div className="p-2 rounded-2xl bg-[#f59e0b]/10 text-[#f59e0b] border border-[#f59e0b]/20">
+                    <DollarSign className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <div className="text-3xl font-extrabold font-mono text-[#f59e0b] tracking-tight">
+                    R$ {totalLoss.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
+                    <TrendingDown className="w-3 h-3 text-amber-400 inline" />
+                    Concentrado em 2 causas no Pareto
+                  </p>
+                </div>
+              </div>
+
+              {/* KPI 4: Custo Total de IA / FinOps (Emerald #10b981) */}
+              <div className="p-5 rounded-3xl bg-[#0b0f1a]/95 backdrop-blur-2xl border border-white/10 relative overflow-hidden shadow-xl hover:border-emerald-500/30 transition-all group">
+                <div className="pointer-events-none absolute -top-8 -right-8 w-24 h-24 bg-[#10b981]/10 rounded-full blur-2xl group-hover:bg-[#10b981]/20 transition-all" />
+                <div className="flex items-center justify-between">
+                  <span className="text-xs uppercase tracking-wider text-slate-400 font-medium">
+                    Custo de IA (FinOps)
+                  </span>
+                  <div className="p-2 rounded-2xl bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20">
+                    <Zap className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <div className="text-3xl font-extrabold font-mono text-[#10b981] tracking-tight">
+                    R$ {totalCostBrl.toFixed(4)}
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1">
+                    <span className="font-mono text-emerald-400">R$ 0,00018</span> por review analisada
+                  </p>
+                </div>
+              </div>
+            </section>
             {/* Gráfico de Pareto 80/20 Principal */}
             <div className="p-6 rounded-3xl bg-[#0b0f1a]/95 backdrop-blur-2xl border border-white/10 shadow-2xl relative overflow-hidden">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
