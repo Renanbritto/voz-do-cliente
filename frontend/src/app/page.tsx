@@ -321,18 +321,30 @@ export default function VoCDashboardPage() {
         {/* Topo da Sidebar com Logo oficial RN Intelligence */}
         <div
           className={cn(
-            "p-4 border-b border-white/10 flex items-center",
-            isSidebarExpanded ? "justify-between" : "justify-center"
+            "p-3.5 border-b border-white/10 flex transition-all",
+            isSidebarExpanded
+              ? "flex-row items-center justify-between"
+              : "flex-col items-center justify-center gap-2.5"
           )}
         >
-          <div className="flex items-center gap-3 overflow-hidden">
-            <div className="h-11 w-11 rounded-2xl bg-[#090d16] border border-rose-500/30 flex items-center justify-center overflow-hidden shrink-0 shadow-lg shadow-rose-500/10">
+          <div
+            className={cn(
+              "flex items-center min-w-0",
+              isSidebarExpanded ? "gap-3" : "justify-center"
+            )}
+          >
+            <button
+              onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
+              className="h-11 w-11 rounded-2xl bg-[#090d16] border border-rose-500/30 flex items-center justify-center overflow-hidden shrink-0 shadow-lg shadow-rose-500/10 hover:border-rose-500/60 transition-all cursor-pointer group/logo"
+              title={isSidebarExpanded ? "RN Intelligence" : "Expandir menu lateral"}
+              aria-label="RN Intelligence"
+            >
               <img
                 src="/rn_logo_emblem.jpg"
                 alt="RN Intelligence Emblema"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover group-hover/logo:scale-105 transition-transform"
               />
-            </div>
+            </button>
 
             {isSidebarExpanded && (
               <div className="overflow-hidden">
@@ -349,14 +361,17 @@ export default function VoCDashboardPage() {
           {/* Botão de Toggle da Sidebar */}
           <button
             onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.06] border border-transparent hover:border-white/10 transition-colors cursor-pointer shrink-0"
+            className={cn(
+              "rounded-xl text-slate-400 hover:text-white bg-white/[0.02] hover:bg-white/[0.08] border border-white/5 hover:border-white/10 transition-all cursor-pointer shrink-0 flex items-center justify-center",
+              isSidebarExpanded ? "p-1.5" : "w-8 h-8 text-rose-400"
+            )}
             title={isSidebarExpanded ? "Recolher menu lateral" : "Expandir menu lateral"}
             aria-label="Alternar menu lateral"
           >
             {isSidebarExpanded ? (
               <PanelLeftClose className="w-4 h-4" />
             ) : (
-              <PanelLeftOpen className="w-4 h-4" />
+              <PanelLeftOpen className="w-4 h-4 text-rose-400" />
             )}
           </button>
         </div>
