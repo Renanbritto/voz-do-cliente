@@ -44,20 +44,75 @@ import {
   Activity,
   Sliders,
   ExternalLink,
+  BatteryWarning,
+  WifiOff,
+  Headset,
+  Copy,
+  Check,
+  Eye,
+  Code2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { INITIAL_REVIEWS, calculatePareto, ParetoRow } from "@/data/mock-data";
 import { EnrichedReview } from "@/lib/types";
 import { CopilotSidebar } from "@/components/chat/copilot-sidebar";
 
-type ActiveTab = "overview" | "playground" | "table" | "finops";
+type ActiveTab = "playground" | "overview" | "table" | "finops";
+
+// Presets de teste para análise rápida no Cockpit
+const PRESET_EXAMPLES = [
+  {
+    id: "battery",
+    title: "Bateria Crítica",
+    subtitle: "Detrator severo • Audio ANC",
+    sentimentType: "negative" as const,
+    product: "Fone de Ouvido Noise Cancelling Pro",
+    loss: "R$ 899,00",
+    text: "A bateria não dura 2 horas com o cancelamento de ruído ligado, bem longe das 30 horas da caixa. Pedi a devolução imediata.",
+    icon: BatteryWarning,
+    color: "#f43f5e",
+  },
+  {
+    id: "bluetooth",
+    title: "Falha de Conexão",
+    subtitle: "Desconexão frequente • Teclado",
+    sentimentType: "negative" as const,
+    product: "Teclado Mecânico Wireless Stealth",
+    loss: "R$ 549,00",
+    text: "O bluetooth fica caindo a cada 10 minutos quando uso no trabalho. Impossível participar de reuniões sem conectar o cabo.",
+    icon: WifiOff,
+    color: "#f59e0b",
+  },
+  {
+    id: "promoter",
+    title: "Experiência Premium",
+    subtitle: "Promotor leal • Smartwatch",
+    sentimentType: "positive" as const,
+    product: "Smartwatch Tracker Ultra",
+    loss: "R$ 0,00",
+    text: "Melhor compra que fiz no ano! Conforto absurdo, som cristalino e bateria durou 4 dias de uso intenso. Recomendo para todos!",
+    icon: Sparkles,
+    color: "#10b981",
+  },
+  {
+    id: "sac",
+    title: "Atrito no SAC / Troca",
+    subtitle: "Gargalo no Pós-Venda • Monitor",
+    sentimentType: "negative" as const,
+    product: "Monitor Ultrawide 34 IPS",
+    loss: "R$ 2.499,00",
+    text: "Chegou com dead pixels no centro e vazamento de luz. Solicitei a garantia há 6 dias e o SAC não respondeu até agora.",
+    icon: Headset,
+    color: "#06b6d4",
+  },
+];
 
 export default function VoCDashboardPage() {
   // Estado da Sidebar retrátil: INICIA FECHADA/RECOLHIDA por padrão (w-20)
   const [isSidebarExpanded, setIsSidebarExpanded] = useState<boolean>(false);
 
-  // Módulo ativo
-  const [activeTab, setActiveTab] = useState<ActiveTab>("overview");
+  // Módulo ativo: Inicia no Playground de Análise IA em Tempo Real
+  const [activeTab, setActiveTab] = useState<ActiveTab>("playground");
 
   // Estado do Drawer do Copilot (FAB)
   const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
@@ -70,7 +125,10 @@ export default function VoCDashboardPage() {
   const [selectedSentiment, setSelectedSentiment] = useState<string>("TODOS");
   const [selectedAspect, setSelectedAspect] = useState<string>("TODOS");
 
-  // Estado do Playground de Análise IA
+  // Estado do Playground de Análise IA (Cockpit Studio)
+  const [selectedPresetId, setSelectedPresetId] = useState<string>("battery");
+  const [playgroundViewMode, setPlaygroundViewMode] = useState<"dashboard" | "json">("dashboard");
+  const [copiedJson, setCopiedJson] = useState<boolean>(false);
   const [playgroundText, setPlaygroundText] = useState(
     "A bateria não dura 2 horas com o cancelamento de ruído ligado, bem longe das 30 horas da caixa. Pedi a devolução imediata."
   );
@@ -78,6 +136,8 @@ export default function VoCDashboardPage() {
     "Fone de Ouvido Noise Cancelling Pro"
   );
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  // Já inicializado com o diagnóstico ativo do primeiro caso de uso (NUNCA tela vazia)
   const [analysisResult, setAnalysisResult] = useState<{
     result: {
       sentiment: string;
@@ -97,7 +157,26 @@ export default function VoCDashboardPage() {
       cost_brl: number;
       is_live: boolean;
     };
-  } | null>(null);
+  }>({
+    result: {
+      sentiment: "Negativo",
+      sentiment_score: -0.85,
+      aspect: "Bateria",
+      primary_problem_tag: "Autonomia Insuficiente",
+      secondary_tag: "Classificação Automatizada",
+      churn_risk: "Alto",
+      suggested_action: "Contatar cliente com prioridade e revisar lote de produção do SKU AUDIO-PRO-ANC.",
+      summary_pt: "Cliente severamente insatisfeito com autonomia de 2h vs 30h prometidas, solicitando devolução imediata.",
+    },
+    metrics: {
+      total_tokens: 318,
+      input_tokens: 236,
+      output_tokens: 82,
+      cost_usd: 0.000032,
+      cost_brl: 0.000182,
+      is_live: true,
+    },
+  });
 
   // Cálculos do Pareto 80/20
   const paretoData = useMemo(() => calculatePareto(reviews), [reviews]);
@@ -166,16 +245,19 @@ export default function VoCDashboardPage() {
   }, [reviews, searchQuery, selectedSentiment, selectedAspect]);
 
   // Função para executar análise no Playground
-  const handleRunAnalysis = async () => {
-    if (!playgroundText.trim() || isAnalyzing) return;
+  const handleRunAnalysis = async (overrideText?: string, overrideProduct?: string) => {
+    const textToAnalyze = overrideText !== undefined ? overrideText : playgroundText;
+    const prodToAnalyze = overrideProduct !== undefined ? overrideProduct : playgroundProduct;
+
+    if (!textToAnalyze.trim() || isAnalyzing) return;
     setIsAnalyzing(true);
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          text: playgroundText,
-          productName: playgroundProduct,
+          text: textToAnalyze,
+          productName: prodToAnalyze,
         }),
       });
       const data = await res.json();
@@ -187,6 +269,20 @@ export default function VoCDashboardPage() {
     } finally {
       setIsAnalyzing(false);
     }
+  };
+
+  const handleSelectPreset = (preset: (typeof PRESET_EXAMPLES)[0]) => {
+    setSelectedPresetId(preset.id);
+    setPlaygroundText(preset.text);
+    setPlaygroundProduct(preset.product);
+    handleRunAnalysis(preset.text, preset.product);
+  };
+
+  const handleCopyJson = () => {
+    if (!analysisResult) return;
+    navigator.clipboard.writeText(JSON.stringify(analysisResult, null, 2));
+    setCopiedJson(true);
+    setTimeout(() => setCopiedJson(false), 2000);
   };
 
   // Exportar dados em CSV
@@ -240,16 +336,16 @@ export default function VoCDashboardPage() {
 
   const navItems = [
     {
-      id: "overview" as ActiveTab,
-      label: "Visão Geral & Pareto",
-      icon: BarChart3,
-      badge: "80/20",
-    },
-    {
       id: "playground" as ActiveTab,
       label: "Análise IA em Tempo Real",
       icon: Sparkles,
       badge: "Live",
+    },
+    {
+      id: "overview" as ActiveTab,
+      label: "Visão Geral & Pareto",
+      icon: BarChart3,
+      badge: "80/20",
     },
     {
       id: "table" as ActiveTab,
@@ -845,232 +941,437 @@ export default function VoCDashboardPage() {
         )}
 
         {/* =======================================================================
-            MÓDULO 2: PLAYGROUND & ANÁLISE EM TEMPO REAL COM IA (STRUCTURED OUTPUTS)
+            MÓDULO 1: PLAYGROUND & ANÁLISE EM TEMPO REAL COM IA (STRUCTURED OUTPUTS)
             ======================================================================= */}
         {activeTab === "playground" && (
           <div className="space-y-6">
-            <div className="p-6 rounded-3xl bg-[#0b0f1a]/95 backdrop-blur-2xl border border-white/10 shadow-2xl relative overflow-hidden">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-bold text-white tracking-wide">
-                      Análise de Avaliação em Tempo Real
-                    </h2>
-                    <span className="px-2 py-0.5 rounded-lg text-[10px] font-mono bg-rose-500/20 text-rose-300 border border-rose-500/30">
-                      Gemini 1.5 Flash
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Digite ou selecione uma avaliação de e-commerce para inspecionar a extração de causa-raiz, score de sentimento e custo FinOps por token.
-                  </p>
+            {/* Header da Página com contextualização executiva */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-white/5">
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <h2 className="text-xl font-bold text-white tracking-wide">
+                    Análise em Tempo Real • VoC Cockpit
+                  </h2>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping" />
+                    Gemini 1.5 Flash
+                  </span>
+                  <span className="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[10px] font-mono bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
+                    Structured Outputs (JSON)
+                  </span>
                 </div>
+                <p className="text-xs text-slate-400 mt-1">
+                  Insira qualquer avaliação de consumidor ou selecione um caso de uso para extrair sentimento contínuo, causa-raiz técnica, risco de churn e ação prescritiva imediata.
+                </p>
               </div>
 
-              {/* Exemplos Rápidos */}
-              <div className="mb-4">
-                <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold block mb-2 font-mono">
-                  ⚡ Exemplos Rápidos para Testar:
-                </span>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <button
-                    onClick={() => {
-                      setPlaygroundText(
-                        "A bateria não dura 2 horas com o cancelamento de ruído ligado, bem longe das 30 horas da caixa. Pedi a devolução imediata."
-                      );
-                      setPlaygroundProduct("Fone de Ouvido Noise Cancelling Pro");
-                    }}
-                    className="text-left p-3 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/10 text-xs text-slate-300 hover:text-white transition-all cursor-pointer"
-                  >
-                    <span className="text-rose-400 font-semibold block mb-0.5">
-                      🔋 Bateria Fraca (Detrator)
-                    </span>
-                    <span className="text-[11px] text-slate-400 line-clamp-1">
-                      Fone ANC com autonomia muito abaixo do prometido
-                    </span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setPlaygroundText(
-                        "O bluetooth fica caindo a cada 10 minutos quando uso no trabalho. Impossível participar de reuniões."
-                      );
-                      setPlaygroundProduct("Teclado Mecânico Wireless Stealth");
-                    }}
-                    className="text-left p-3 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/10 text-xs text-slate-300 hover:text-white transition-all cursor-pointer"
-                  >
-                    <span className="text-amber-400 font-semibold block mb-0.5">
-                      📶 Bluetooth Desconectando
-                    </span>
-                    <span className="text-[11px] text-slate-400 line-clamp-1">
-                      Teclado sem fio desconectando com frequência
-                    </span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setPlaygroundText(
-                        "Melhor compra que fiz no ano! Conforto absurdo, som cristalino e bateria durou 4 dias de uso intenso."
-                      );
-                      setPlaygroundProduct("Smartwatch Tracker Ultra");
-                    }}
-                    className="text-left p-3 rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/10 text-xs text-slate-300 hover:text-white transition-all cursor-pointer"
-                  >
-                    <span className="text-emerald-400 font-semibold block mb-0.5">
-                      ⭐ Produto Excelente (Promotor)
-                    </span>
-                    <span className="text-[11px] text-slate-400 line-clamp-1">
-                      Cliente encantado com qualidade e bateria
-                    </span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Formulário de Input */}
-              <div className="space-y-3">
-                <div>
-                  <label className="text-[11px] font-medium text-slate-400 block mb-1">
-                    Nome do Produto / SKU:
-                  </label>
-                  <input
-                    type="text"
-                    value={playgroundProduct}
-                    onChange={(e) => setPlaygroundProduct(e.target.value)}
-                    className="w-full bg-white/[0.04] border border-white/10 focus:border-rose-500/50 rounded-2xl px-4 py-2.5 text-xs text-white outline-none transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-medium text-slate-400 block mb-1">
-                    Texto da Mensagem / Avaliação do Cliente:
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={playgroundText}
-                    onChange={(e) => setPlaygroundText(e.target.value)}
-                    className="w-full bg-white/[0.04] border border-white/10 focus:border-rose-500/50 rounded-2xl p-4 text-xs sm:text-sm text-white outline-none transition-all resize-none"
-                    placeholder="Digite a avaliação para classificar..."
-                  />
-                </div>
-
+              {/* Seletor de Modo de Visualização do Cockpit */}
+              <div className="flex items-center gap-1 p-1 rounded-2xl bg-white/[0.03] border border-white/10 shrink-0">
                 <button
-                  onClick={handleRunAnalysis}
-                  disabled={isAnalyzing || !playgroundText.trim()}
-                  className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-600 hover:to-amber-600 font-semibold text-xs sm:text-sm text-white transition-all shadow-xl shadow-rose-500/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-                >
-                  {isAnalyzing ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      Processando com Structured Outputs (Gemini 1.5 Flash)...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4" />
-                      Analisar Avaliação com Inteligência Artificial
-                    </>
+                  onClick={() => setPlaygroundViewMode("dashboard")}
+                  className={cn(
+                    "px-3 py-1.5 rounded-xl text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer",
+                    playgroundViewMode === "dashboard"
+                      ? "bg-rose-500 text-white shadow-md shadow-rose-500/20"
+                      : "text-slate-400 hover:text-white"
                   )}
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  Painel Executivo
+                </button>
+                <button
+                  onClick={() => setPlaygroundViewMode("json")}
+                  className={cn(
+                    "px-3 py-1.5 rounded-xl text-xs font-mono transition-all flex items-center gap-1.5 cursor-pointer",
+                    playgroundViewMode === "json"
+                      ? "bg-rose-500 text-white shadow-md shadow-rose-500/20"
+                      : "text-slate-400 hover:text-white"
+                  )}
+                >
+                  <Code2 className="w-3.5 h-3.5" />
+                  JSON Schema
                 </button>
               </div>
+            </div>
 
-              {/* Card de Resultados da Análise */}
-              {analysisResult && (
-                <div className="mt-6 p-5 rounded-2xl bg-[#090d16] border border-rose-500/30 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                  <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                    <span className="text-xs font-bold text-white flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                      Resultado da Análise Estruturada
+            {/* Grid 2-Colunas Lado a Lado (Split-Screen Cockpit) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* COLUNA ESQUERDA: Console de Entrada & Presets (lg:col-span-5) */}
+              <div className="lg:col-span-5 space-y-4">
+                {/* 1. Presets Rápidos Clicáveis (1-Clique) */}
+                <div className="p-5 rounded-3xl bg-[#0b0f1a]/95 backdrop-blur-2xl border border-white/10 shadow-xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs uppercase font-bold text-slate-400 font-mono tracking-wider flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                      1. Casos de Uso Prontos:
                     </span>
-                    <span className="text-[10px] font-mono text-slate-400">
-                      {analysisResult.metrics.is_live ? "API Gemini Conectada" : "Modo Simulado / Fallback"}
-                    </span>
+                    <span className="text-[10px] text-slate-500 font-mono">1-Clique para analisar</span>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div className="space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-slate-400">Sentimento:</span>
-                        <span
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {PRESET_EXAMPLES.map((preset) => {
+                      const Icon = preset.icon;
+                      const isSelected = selectedPresetId === preset.id;
+                      return (
+                        <button
+                          key={preset.id}
+                          onClick={() => handleSelectPreset(preset)}
                           className={cn(
-                            "px-2.5 py-0.5 rounded-lg text-xs font-bold font-mono",
-                            analysisResult.result.sentiment === "Positivo"
-                              ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                              : analysisResult.result.sentiment === "Negativo"
-                              ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
-                              : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                            "p-3 rounded-2xl text-left border transition-all cursor-pointer flex flex-col justify-between group",
+                            isSelected
+                              ? "bg-rose-500/15 border-rose-500/50 shadow-lg shadow-rose-950/30"
+                              : "bg-white/[0.02] hover:bg-white/[0.05] border-white/5 hover:border-white/15"
                           )}
                         >
-                          {analysisResult.result.sentiment} (Score: {analysisResult.result.sentiment_score > 0 ? `+${analysisResult.result.sentiment_score}` : analysisResult.result.sentiment_score})
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-slate-400">Dimensão / Aspecto:</span>
-                        <span className="text-xs font-semibold text-white">
-                          {analysisResult.result.aspect}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-slate-400">Causa-Raiz Detectada:</span>
-                        <span className="text-xs font-mono font-bold text-cyan-400">
-                          {analysisResult.result.primary_problem_tag}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-slate-400">Risco de Churn:</span>
-                        <span
-                          className={cn(
-                            "text-xs font-bold font-mono",
-                            analysisResult.result.churn_risk === "Alto"
-                              ? "text-rose-400"
-                              : analysisResult.result.churn_risk === "Médio"
-                              ? "text-amber-400"
-                              : "text-emerald-400"
-                          )}
-                        >
-                          {analysisResult.result.churn_risk}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-2">
-                      <span className="text-[10px] uppercase font-bold text-slate-400 font-mono tracking-wider block">
-                        💰 FinOps da Chamada:
-                      </span>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-400">Tokens Consumidos:</span>
-                        <span className="font-mono text-cyan-400 font-bold">
-                          {analysisResult.metrics.total_tokens}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-400">Custo da Chamada (R$):</span>
-                        <span className="font-mono text-emerald-400 font-bold">
-                          R$ {analysisResult.metrics.cost_brl.toFixed(5)}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-400">Custo em Dólar (USD):</span>
-                        <span className="font-mono text-slate-300">
-                          ${analysisResult.metrics.cost_usd.toFixed(5)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 p-3 rounded-xl bg-white/[0.02] border border-white/5 space-y-1">
-                    <span className="text-xs text-amber-300 font-semibold block">
-                      💡 Ação Prescritiva Recomendada:
-                    </span>
-                    <p className="text-xs text-slate-300">
-                      {analysisResult.result.suggested_action}
-                    </p>
-                    <p className="text-[11px] text-slate-400 italic pt-1 border-t border-white/5">
-                      📝 {analysisResult.result.summary_pt}
-                    </p>
+                          <div className="flex items-center justify-between w-full mb-1">
+                            <span className="text-xs font-bold text-white group-hover:text-rose-300 transition-colors flex items-center gap-1.5 truncate">
+                              <span
+                                className="w-2 h-2 rounded-full shrink-0"
+                                style={{ backgroundColor: preset.color }}
+                              />
+                              {preset.title}
+                            </span>
+                            <Icon className="w-3.5 h-3.5 text-slate-400 group-hover:text-white shrink-0" />
+                          </div>
+                          <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
+                            <span className="truncate">{preset.subtitle}</span>
+                            <span className="text-amber-400/80 shrink-0 ml-1">{preset.loss}</span>
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
-              )}
+
+                {/* 2. Formulário Customizável */}
+                <div className="p-5 rounded-3xl bg-[#0b0f1a]/95 backdrop-blur-2xl border border-white/10 shadow-xl space-y-4">
+                  <span className="text-xs uppercase font-bold text-slate-400 font-mono tracking-wider block">
+                    2. Ou Customize a Mensagem:
+                  </span>
+
+                  {/* Chips de Produtos Populares */}
+                  <div>
+                    <label className="text-[11px] font-medium text-slate-400 block mb-1.5">
+                      Produto / Categoria:
+                    </label>
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {[
+                        "Fone ANC Pro",
+                        "Smartwatch Ultra",
+                        "Teclado Wireless",
+                        "Monitor Ultrawide 34",
+                      ].map((prodChip) => (
+                        <button
+                          key={prodChip}
+                          type="button"
+                          onClick={() => setPlaygroundProduct(prodChip)}
+                          className={cn(
+                            "px-2.5 py-1 rounded-xl text-[10px] font-mono transition-all cursor-pointer border",
+                            playgroundProduct.includes(prodChip)
+                              ? "bg-rose-500/20 text-rose-300 border-rose-500/40"
+                              : "bg-white/[0.02] text-slate-400 hover:text-white border-white/5"
+                          )}
+                        >
+                          {prodChip}
+                        </button>
+                      ))}
+                    </div>
+                    <input
+                      type="text"
+                      value={playgroundProduct}
+                      onChange={(e) => setPlaygroundProduct(e.target.value)}
+                      placeholder="Ex: Fone de Ouvido ANC, Smartwatch Ultra..."
+                      className="w-full bg-white/[0.04] border border-white/10 focus:border-rose-500/50 rounded-2xl px-4 py-2.5 text-xs text-white outline-none transition-all placeholder-slate-600"
+                    />
+                  </div>
+
+                  {/* Textarea com contador */}
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-[11px] font-medium text-slate-400">
+                        Texto da Avaliação do Consumidor:
+                      </label>
+                      <span className="text-[10px] font-mono text-slate-500">
+                        {playgroundText.length} caracteres
+                      </span>
+                    </div>
+                    <textarea
+                      rows={4}
+                      value={playgroundText}
+                      onChange={(e) => {
+                        setPlaygroundText(e.target.value);
+                        setSelectedPresetId("");
+                      }}
+                      placeholder="Cole aqui a reclamação ou elogio do cliente..."
+                      className="w-full bg-white/[0.04] border border-white/10 focus:border-rose-500/50 rounded-2xl p-3.5 text-xs text-white outline-none transition-all resize-none placeholder-slate-600 leading-relaxed"
+                    />
+                  </div>
+
+                  {/* Botão de Envio */}
+                  <button
+                    onClick={() => handleRunAnalysis()}
+                    disabled={isAnalyzing || !playgroundText.trim()}
+                    className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-rose-500 via-rose-600 to-amber-500 hover:from-rose-600 hover:to-amber-600 font-semibold text-xs sm:text-sm text-white transition-all shadow-xl shadow-rose-500/25 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    {isAnalyzing ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        Inspecionando com Gemini 1.5 Flash...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 text-amber-200" />
+                        Classificar com Structured Outputs
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* COLUNA DIREITA: Cockpit Analítico e Diagnóstico por IA (lg:col-span-7) */}
+              <div className="lg:col-span-7 space-y-4">
+                <div className="p-6 rounded-3xl bg-[#0b0f1a]/95 backdrop-blur-2xl border border-white/10 shadow-2xl relative overflow-hidden">
+                  {/* Top Bar da Coluna de Diagnóstico */}
+                  <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-xs font-bold text-white tracking-wide">
+                        Diagnóstico Analítico em Tempo Real
+                      </span>
+                      <span className="px-2 py-0.5 rounded-lg text-[10px] font-mono bg-white/[0.04] text-slate-300 border border-white/10">
+                        Zero-Shot Schema
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleCopyJson}
+                      className="px-2.5 py-1 rounded-xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 text-[10px] font-mono text-slate-300 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+                      title="Copiar JSON da resposta"
+                    >
+                      {copiedJson ? (
+                        <>
+                          <Check className="w-3 h-3 text-emerald-400" />
+                          <span className="text-emerald-300">Copiado</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3 h-3 text-slate-400" />
+                          <span>Copiar JSON</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                    {/* VISÃO DASHBOARD / PAINEL EXECUTIVO */}
+                    {/* Overlay de Análise em Andamento */}
+                    {isAnalyzing && (
+                      <div className="absolute inset-0 bg-[#0b0f1a]/85 backdrop-blur-md z-20 flex flex-col items-center justify-center gap-3 rounded-3xl animate-in fade-in duration-200">
+                        <div className="relative">
+                          <div className="w-12 h-12 rounded-full border-2 border-rose-500/20 border-t-rose-500 animate-spin" />
+                          <Sparkles className="w-5 h-5 text-amber-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                        </div>
+                        <div className="text-center px-4">
+                          <p className="text-xs font-semibold text-white tracking-wide">
+                            Extraindo Entidades Estruturadas com Gemini
+                          </p>
+                          <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                            Mapeando causa-raiz, risco de churn e cálculo FinOps...
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {playgroundViewMode === "dashboard" ? (
+                      <div className="space-y-5 pt-4">
+                        {/* 1. Medidor / Gauge Visual Contínuo de Sentimento (-1.0 a +1.0) */}
+                        <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs uppercase font-bold text-slate-400 font-mono tracking-wider">
+                              Score de Sentimento Contínuo:
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={cn(
+                                  "px-3 py-1 rounded-xl text-xs font-extrabold font-mono border flex items-center gap-1.5",
+                                  analysisResult.result.sentiment === "Positivo"
+                                    ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+                                    : analysisResult.result.sentiment === "Negativo"
+                                    ? "bg-rose-500/15 text-rose-300 border-rose-500/30"
+                                    : "bg-amber-500/15 text-amber-300 border-amber-500/30"
+                                )}
+                              >
+                                {analysisResult.result.sentiment === "Positivo" ? (
+                                  <ThumbsUp className="w-3.5 h-3.5 text-emerald-400" />
+                                ) : analysisResult.result.sentiment === "Negativo" ? (
+                                  <ThumbsDown className="w-3.5 h-3.5 text-rose-400" />
+                                ) : (
+                                  <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+                                )}
+                                {analysisResult.result.sentiment}
+                              </span>
+                              <span className="text-sm font-mono font-extrabold text-white">
+                                {analysisResult.result.sentiment_score > 0
+                                  ? `+${analysisResult.result.sentiment_score}`
+                                  : analysisResult.result.sentiment_score}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Barra Régua de Gradiente com Ponteiro Dinâmico */}
+                          <div className="pt-2 pb-1">
+                            <div className="relative w-full h-3 rounded-full bg-gradient-to-r from-[#f43f5e] via-[#f59e0b] to-[#10b981] shadow-inner">
+                              {/* Ponteiro Indicador */}
+                              <div
+                                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-white border-2 border-[#090d16] shadow-xl transition-all duration-500 flex items-center justify-center"
+                                style={{
+                                  left: `${Math.max(
+                                    4,
+                                    Math.min(
+                                      96,
+                                      ((analysisResult.result.sentiment_score + 1.0) / 2.0) * 100
+                                    )
+                                  )}%`,
+                                }}
+                              >
+                                <div
+                                  className={cn(
+                                    "w-1.5 h-1.5 rounded-full",
+                                    analysisResult.result.sentiment === "Positivo"
+                                      ? "bg-emerald-500"
+                                      : analysisResult.result.sentiment === "Negativo"
+                                      ? "bg-rose-500"
+                                      : "bg-amber-500"
+                                  )}
+                                />
+                              </div>
+                            </div>
+                            {/* Legenda dos extremos da régua */}
+                            <div className="flex justify-between text-[10px] font-mono text-slate-500 mt-1.5">
+                              <span className="text-rose-400 font-semibold">-1.0 (Detrator Severo)</span>
+                              <span className="text-amber-400 font-semibold">0.0 (Neutro)</span>
+                              <span className="text-emerald-400 font-semibold">+1.0 (Promotor Leal)</span>
+                            </div>
+                          </div>
+                        </div>
+
+                      {/* 2. Grid de 4 Badges de Inteligência Estruturada */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                        {/* Causa-Raiz Primária */}
+                        <div className="p-3 rounded-2xl bg-[#090d16] border border-cyan-500/30 space-y-1">
+                          <span className="text-[10px] uppercase font-bold text-slate-400 font-mono block">
+                            Causa-Raiz
+                          </span>
+                          <span className="text-xs font-bold text-cyan-300 block truncate" title={analysisResult.result.primary_problem_tag}>
+                            {analysisResult.result.primary_problem_tag}
+                          </span>
+                        </div>
+
+                        {/* Dimensão Técnica */}
+                        <div className="p-3 rounded-2xl bg-[#090d16] border border-white/10 space-y-1">
+                          <span className="text-[10px] uppercase font-bold text-slate-400 font-mono block">
+                            Dimensão
+                          </span>
+                          <span className="text-xs font-bold text-slate-200 block truncate" title={analysisResult.result.aspect}>
+                            {analysisResult.result.aspect}
+                          </span>
+                        </div>
+
+                        {/* Risco de Churn */}
+                        <div
+                          className={cn(
+                            "p-3 rounded-2xl border space-y-1",
+                            analysisResult.result.churn_risk === "Alto"
+                              ? "bg-rose-500/10 border-rose-500/40 text-rose-300"
+                              : analysisResult.result.churn_risk === "Médio"
+                              ? "bg-amber-500/10 border-amber-500/40 text-amber-300"
+                              : "bg-emerald-500/10 border-emerald-500/40 text-emerald-300"
+                          )}
+                        >
+                          <span className="text-[10px] uppercase font-bold text-slate-400 font-mono block">
+                            Risco de Churn
+                          </span>
+                          <span className="text-xs font-bold font-mono block">
+                            {analysisResult.result.churn_risk}
+                          </span>
+                        </div>
+
+                        {/* Subtag Contextual */}
+                        <div className="p-3 rounded-2xl bg-[#090d16] border border-white/10 space-y-1">
+                          <span className="text-[10px] uppercase font-bold text-slate-400 font-mono block">
+                            Subtag
+                          </span>
+                          <span className="text-xs font-medium text-slate-300 block truncate" title={analysisResult.result.secondary_tag}>
+                            {analysisResult.result.secondary_tag}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 3. Ação Prescritiva Recomendada para o Time (Destaque Central) */}
+                      <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-rose-500/5 to-transparent border border-amber-500/30 space-y-1.5">
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300">
+                          <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                          <span>Ação Prescritiva para Engenharia / Operações:</span>
+                        </div>
+                        <p className="text-xs text-slate-200 leading-relaxed pl-5 font-medium">
+                          {analysisResult.result.suggested_action}
+                        </p>
+                      </div>
+
+                      {/* 4. Síntese Executiva */}
+                      <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/5 space-y-1">
+                        <span className="text-[10px] uppercase font-bold text-slate-400 font-mono block">
+                          Síntese Executiva (Linguagem Natural):
+                        </span>
+                        <p className="text-xs text-slate-300 italic leading-relaxed">
+                          "{analysisResult.result.summary_pt}"
+                        </p>
+                      </div>
+
+                      {/* 5. Telemetria FinOps em Tempo Real */}
+                      <div className="grid grid-cols-3 gap-2.5 pt-1">
+                        <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 text-center">
+                          <span className="text-[9px] uppercase font-bold text-slate-400 font-mono block">
+                            Tokens Consumidos
+                          </span>
+                          <span className="text-xs font-extrabold font-mono text-cyan-400 block mt-0.5">
+                            {analysisResult.metrics.total_tokens}
+                          </span>
+                        </div>
+
+                        <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 text-center">
+                          <span className="text-[9px] uppercase font-bold text-slate-400 font-mono block">
+                            Custo Chamada (R$)
+                          </span>
+                          <span className="text-xs font-extrabold font-mono text-emerald-400 block mt-0.5">
+                            R$ {analysisResult.metrics.cost_brl.toFixed(5)}
+                          </span>
+                        </div>
+
+                        <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 text-center">
+                          <span className="text-[9px] uppercase font-bold text-slate-400 font-mono block">
+                            Custo em Dólar
+                          </span>
+                          <span className="text-xs font-extrabold font-mono text-slate-300 block mt-0.5">
+                            ${analysisResult.metrics.cost_usd.toFixed(5)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* VISÃO JSON SCHEMA PURO */
+                    <div className="space-y-3 pt-4">
+                      <div className="flex items-center justify-between text-xs text-slate-400 font-mono">
+                        <span>Payload Retornado pelo Gemini 1.5 Flash:</span>
+                        <span className="text-emerald-400">Contrato JSON Válido</span>
+                      </div>
+                      <pre className="p-4 rounded-2xl bg-black/60 border border-white/10 font-mono text-xs text-cyan-300 overflow-x-auto whitespace-pre leading-relaxed max-h-96">
+                        {JSON.stringify(analysisResult, null, 2)}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         )}
