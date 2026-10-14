@@ -1116,7 +1116,7 @@ export default function VoCDashboardPage() {
                     ) : (
                       <>
                         <Send className="w-4 h-4 text-white" />
-                        Classificar com Structured Outputs
+                        Classificar Avaliação do Cliente
                       </>
                     )}
                   </button>
